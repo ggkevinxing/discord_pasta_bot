@@ -1,3 +1,5 @@
+*.sln
+*.pyproj
+.vs/
 discord.log
-
 config.ini
