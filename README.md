@@ -2,6 +2,8 @@
 
 a discord bot that uses mongodb to make !commands for text/emoji binds
 
+![Let's give a quick shout-out to Tobey Maguire](https://raw.githubusercontent.com/ggkevinxing/discord_pasta_bot/master/add_example.JPG)
+
 # SETTING UP
 
 requires mongodb and [pymongo](http://api.mongodb.com/python/current/installation.html)
