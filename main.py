@@ -5,15 +5,6 @@ import logging
 
 from pymongo import MongoClient
 
-# TO DO:
-# - figure out best way to use string manipulation to isolate command and pasta in !add <command> <pasta>
-# - database integration, i.e. insert_one() on !add, find_one() on !<command>
-#   - key = command, value = pasta
-# - finalize ini config format
-# - optional work
-#   - !changegame (APPARENTLY change_presence is messed up, not sure if this is doable)
-#   - !changenick / !removenick (perhaps have permission check)
-
 # getting env variables
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -103,7 +94,8 @@ async def on_server_join(server):
 
 @bot.event
 async def on_message(message):
-	print(message.author.name + ": " + message.content)
+	if message.author != bot.user:
+		print(message.author.name + ": " + message.content)
 	global gOffCooldown
 
 	# explicit commands ("!" prefix)
@@ -122,7 +114,6 @@ async def on_message(message):
 		for role in message.author.roles:
 			if role.permissions.administrator == True:
 				hasPermission = True
-				print("!add PERMISSIONS ARE A GO")
 				await add_cmd(message)
 				break
 		if hasPermission == False:
