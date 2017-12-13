@@ -16,13 +16,14 @@ rename `config_example.ini` to `config.ini` and replace the bot token, mongodb u
 
 # Default Commands
 
-- `!add !<command> <pasta>`                
+- `!add <command> <pasta>`                
   - creates !<command> bind such that <pasta> is posted to the channel every time a user posts !<command>
   - only administrators may add commands, but everyone can use the !<command> afterwards
-  - if !<command> already exists, it will be replaced with the newest <pasta>
+  - if <command> already exists, it will be replaced with the newest <pasta>
 
-- `!getfreq`
-  - returns poster's number of posts in the last 250 channel messages (mainly just here from the discord.py boilerplate)
+- `!remove <command>`                
+  - removes !<command> bind from database
+  - only administrators may remove commands
 
 - there's also an easter egg command that you probably never want to use or experience the consequences of
 
@@ -31,4 +32,4 @@ rename `config_example.ini` to `config.ini` and replace the bot token, mongodb u
 - Implement `!help` and `!commands`
   - Dynamically return all available commands for the server based on what's stored in the database
 
-- Tidy up the README
+- Tidy up the README, make the set up more comprehensible
