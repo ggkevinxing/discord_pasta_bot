@@ -16,8 +16,8 @@ config = configparser.ConfigParser()
 config.read("config.ini")
 token = config.get("Essential", "token")
 db_uri = config.get("Essential", "db_uri", fallback=False)
-nickname = config.get("Fun", "nickname") or False
-game = config.get("Fun", "game") or False
+nickname = config.get("Fun", "nickname", fallback=False)
+game = config.get("Fun", "game", fallback=False)
 
 gOffCooldown = True
 
@@ -31,27 +31,38 @@ else:
 	db_client = MongoClient()
 	db = None
 
+#######################
+## changing presence ##
+#######################
+@bot.event
+async def on_ready():
+	print("Logged in as: " + bot.user.name + " | " + bot.user.id)
+	if nickname:
+		print("Nickname: " + nickname)
+		for member in bot.get_all_members():
+			if member.id == bot.user.id:
+				await bot.change_nickname(member, nickname)
+	if game:
+		print("Playing: " + game)
+		await bot.change_presence(game=discord.Game(type=0, name=game))	# why type=0 has to be specified here to work, i have no idea
+	print("------")
 
-# posts textfilename.txt into given channel
-async def post_txt(textfilename, channel):
-	global gOffCooldown
-	gOffCooldown = False
-	print("post_txt(" + textfilename + ")")
-	file = textfilename + '.txt'
-	message = ''
-	with open(file) as f:
-		for line in f:
-			# don't want to accidentally cross discord's limit of 2000, post message
-			if len(message) > 1900:
-				await bot.send_message(channel, message)
-				message = ''
-			if line.strip():
-				message += line
-	if message:
-		await bot.send_message(channel, message)
-	await asyncio.sleep(300) # arbitrary 5-min cooldown timer
-	gOffCooldown = True
+@bot.event
+async def on_server_join(server):
+	print("Joined " + server.name + " as: " + bot.user.name + " | " + bot.user.id)
+	if nickname:
+		print("Nickname: " + nickname)
+		for member in bot.get_all_members():
+			if member.id == bot.user.id:
+				await bot.change_nickname(member, nickname)
+	if game:
+		print("Playing: " + game)
+		await bot.change_presence(game=discord.Game(type=0, name=game))
+	print("------")
 
+##################################
+## adding and removing commands ##
+##################################
 async def add_cmd(message):
 	tmpArr = message.content.split()
 	# checking that it's at least 3 words long (roughly in the form of !add <command> <pasta>)
@@ -104,30 +115,33 @@ async def remove_cmd(message):
 		else:
 			await bot.send_message(message.channel, "ERROR: No database found, can't remove command.")
 
-@bot.event
-async def on_ready():
-	print("Logged in as: " + bot.user.name + " | " + bot.user.id)
-	if nickname:
-		print(nickname)
-		for member in bot.get_all_members():
-			if member.id == bot.user.id:
-				await bot.change_nickname(member, nickname)
-	if game:
-		await bot.change_presence(game=discord.Game(type=0, name=game))	# why type=0 has to be specified here to work, i have no idea
-	print("------")
+####################
+## misc functions ##
+####################
 
-@bot.event
-async def on_server_join(server):
-	print("Joined " + server.name + " as: " + bot.user.name + " | " + bot.user.id)
-	if nickname:
-		print("Nickname: " + nickname)
-		for member in bot.get_all_members():
-			if member.id == bot.user.id:
-				await bot.change_nickname(member, nickname)
-	if game:
-		await bot.change_presence(game=discord.Game(type=0, name=game))
-	print("------")
+# posts textfilename.txt into given channel
+async def post_txt(textfilename, channel):
+	global gOffCooldown
+	gOffCooldown = False
+	print("post_txt(" + textfilename + ")")
+	file = textfilename + '.txt'
+	message = ''
+	with open(file) as f:
+		for line in f:
+			# don't want to accidentally cross discord's limit of 2000, post message
+			if len(message) > 1900:
+				await bot.send_message(channel, message)
+				message = ''
+			if line.strip():
+				message += line
+	if message:
+		await bot.send_message(channel, message)
+	await asyncio.sleep(300) # arbitrary 5-min cooldown timer
+	gOffCooldown = True
 
+################
+## on_message ##
+################
 @bot.event
 async def on_message(message):
 	if message.author != bot.user:
@@ -159,15 +173,17 @@ async def on_message(message):
 	elif message.author != bot.user and message.content.startswith("!") and len(message.content) > 1:
 		# time to check if we have a database set and if it was a valid command
 		command = message.content[1:]
-		if db:
+		if db and message.server is not None:
 			collection = db[message.server.id]
 			pastaDocument = collection.find_one({'_id': command})
 			if pastaDocument is not None:
 				await bot.send_message(message.channel, pastaDocument['content'])
 			else:
-				await bot.send_message(message.channel, "message starts with '!' but I don't recognize this command. Use !help or !commands to see what's available.")
+				await bot.send_message(message.channel, "ERROR: Message starts with '!' but I don't recognize this command. Use !help or !commands to see what's available.")
+		elif message.server is None:
+			await bot.send_message(message.channel, "ERROR: I don't currently have support for any commands in private messages. Sorry!")
 		else:
-			await bot.send_message(message.channel, "message starts with '!' but I don't recognize this command. I don't even have a database set, so I'm limited to just my default commands.\n" +
+			await bot.send_message(message.channel, "ERROR: Message starts with '!' but I don't recognize this command. I don't even have a database set, so I'm limited to just my default commands.\n" +
 				"You can see what is available using !help or !commands")
 
 	# trigger commands, aka easter eggs
