@@ -151,7 +151,7 @@ async def on_message(message):
 	# explicit commands ("!" prefix)
 	# use double quotes to avoid escape characters on apostrophes PLEASE
 
-	if message.content.startswith("!add") or message.content.startswith("!remove"):
+	if message.content.startswith("!add ") or message.content.startswith("!remove "):
 		if message.server is None:
 			await bot.send_message(message.channel, "ERROR: Sorry, I don't support adding or removing custom commands in private messages.")
 		else:
