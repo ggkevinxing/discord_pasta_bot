@@ -1,3 +1,6 @@
+import time
+import os
+import sys
 import discord
 import asyncio
 import configparser
@@ -27,9 +30,8 @@ if db_uri != False:
 	db_client = MongoClient(db_uri)
 	db = db_client['Morton']
 else:
-	print("WARNING: Database not set")
-	db_client = MongoClient()
-	db = None
+	print("ERROR: Database not set")
+	sys.exit()
 
 #######################
 ## changing presence ##
@@ -61,7 +63,7 @@ async def on_server_join(server):
 	print("------")
 
 ##################################
-## adding and removing commands ##
+## database commands ##
 ##################################
 async def add_cmd(message):
 	tmpArr = message.content.split()
@@ -78,20 +80,17 @@ async def add_cmd(message):
 			pasta = message.content[len(prefix):].strip()
 			# have to make sure it's not a command in itself trying to mess with things
 			if pasta.startswith("!") == False and message.server is not None:
-				if db is not None:
-					collection = db[message.server.id] # keeping a collection for each server
-					writeDocument = {}
-					writeDocument['_id'] = command
-					writeDocument['content'] = pasta
-					result = collection.update_one({'_id': writeDocument['_id']}, {'$set': writeDocument}, upsert=True)
-					
-					# check if add or replace
-					if result.upserted_id is not None:
-						await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been replaced")
-					else:
-						await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been added")
+				collection = db[message.server.id] # keeping a collection for each server
+				writeDocument = {}
+				writeDocument['_id'] = command
+				writeDocument['content'] = pasta
+				result = collection.update_one({'_id': writeDocument['_id']}, {'$set': writeDocument}, upsert=True)
+				
+				# check if add or replace
+				if result.upserted_id is not None:
+					await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been replaced")
 				else:
-					await bot.send_message(message.channel, "ERROR: No database found, can't add command.")
+					await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been added")
 		else:
 			await bot.send_message(message.channel, "ERROR: User " + message.author.display_name + " has provided invalid command '" + command + "' to add.\n----------\n" +
 				"Please ensure that no special symbols are used.\n" +
@@ -105,15 +104,30 @@ async def remove_cmd(message):
 		command = tmpArr[1]
 		if command.startswith("!") == True:
 			command = command[1:]
-		if db is not None:
-			collection = db[message.server.id]
-			result = collection.delete_one({'_id': command})
-			if result.deleted_count == 0:
-				await bot.send_message(message.channel, "ERROR: Could not remove, Command '!" + command + "' not found. On the bright side, you wanted to remove it anyways, right?")
-			else:
-				await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been removed")
+		collection = db[message.server.id]
+		result = collection.delete_one({'_id': command})
+		if result.deleted_count == 0:
+			await bot.send_message(message.channel, "ERROR: Could not remove, Command '!" + command + "' not found. On the bright side, you wanted to remove it anyways, right?")
 		else:
-			await bot.send_message(message.channel, "ERROR: No database found, can't remove command.")
+			await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been removed")
+
+async def get_cmds(message):
+	header = message.server.name + " commands:"
+	initMsg = await bot.send_message(message.channel, header)
+	collection = db[message.server.id] # theoretically, we weren't passed a private message so we should have message.server.id
+	commands = collection.find().batch_size(10).sort('_id',-1)
+	temp = ""
+
+	# redundant code as seen on post_txt, welp
+	for command in commands:
+		if len(temp) > 1900:
+			await bot.send_message(message.channel, temp)
+			temp = ""
+		line = "!" + command['_id'] + "\n"
+		temp += line
+	if temp:
+		await bot.send_message(message.channel, temp)
+
 
 ####################
 ## misc functions ##
@@ -124,14 +138,14 @@ async def post_txt(textfilename, channel):
 	global gOffCooldown
 	gOffCooldown = False
 	print("post_txt(" + textfilename + ")")
-	file = textfilename + '.txt'
-	message = ''
+	file = textfilename + ".txt"
+	message = ""
 	with open(file) as f:
 		for line in f:
 			# don't want to accidentally cross discord's limit of 2000, post message
 			if len(message) > 1900:
 				await bot.send_message(channel, message)
-				message = ''
+				message = ""
 			if line.strip():
 				message += line
 	if message:
@@ -144,17 +158,19 @@ async def post_txt(textfilename, channel):
 ################
 @bot.event
 async def on_message(message):
-	if message.author != bot.user:
-		print(message.author.name + ": " + message.content)
 	global gOffCooldown
 
-	# explicit commands ("!" prefix)
-	# use double quotes to avoid escape characters on apostrophes PLEASE
+	# TODO: check if starts with ! then switch statement on the word that follows the ! instead of all these ifs and repeated startswith stuff?
 
-	if message.content.startswith("!add ") or message.content.startswith("!remove "):
-		if message.server is None:
-			await bot.send_message(message.channel, "ERROR: Sorry, I don't support adding or removing custom commands in private messages.")
-		else:
+	if message.server is None:
+		await bot.send_message(message.channel, "ERROR: I don't currently have support for any commands in private messages. Sorry!")
+
+	elif message.author != bot.user:
+		print(message.author.name + ": " + message.content)
+
+		# explicit commands ("!" prefix)
+		# use double quotes to avoid escape characters on apostrophes PLEASE
+		if message.content.startswith("!add ") or message.content.startswith("!remove "):
 			hasPermission = False
 			for role in message.author.roles:
 				if role.permissions.administrator == True:
@@ -167,34 +183,38 @@ async def on_message(message):
 			if hasPermission == False:
 				await bot.send_message(message.channel, "ERROR: User " + message.author.display_name + " has insufficient permissions to use command.")
 
-	elif message.content.startswith("!help") or message.content.startswith("!commands"):
-		await bot.send_message(message.channel, "eh i'll work on this later")
+		elif message.content.startswith("!help") or message.content.startswith("!commands"):
+			await get_cmds(message)
 
-	elif message.author != bot.user and message.content.startswith("!") and len(message.content) > 1:
-		# time to check if we have a database set and if it was a valid command
-		command = message.content[1:]
-		if db and message.server is not None:
+		elif message.content.startswith("!") and len(message.content) > 1:
+			# time to check if we have a database set and if it was a valid command
+			command = message.content[1:]
 			collection = db[message.server.id]
 			pastaDocument = collection.find_one({'_id': command})
 			if pastaDocument is not None:
 				await bot.send_message(message.channel, pastaDocument['content'])
 			else:
 				await bot.send_message(message.channel, "ERROR: Message starts with '!' but I don't recognize this command. Use !help or !commands to see what's available.")
-		elif message.server is None:
-			await bot.send_message(message.channel, "ERROR: I don't currently have support for any commands in private messages. Sorry!")
-		else:
-			await bot.send_message(message.channel, "ERROR: Message starts with '!' but I don't recognize this command. I don't even have a database set, so I'm limited to just my default commands.\n" +
-				"You can see what is available using !help or !commands")
 
-	# trigger commands, aka easter eggs
+		# trigger commands, aka easter eggs
 
-	elif message.author != bot.user and (message.content.startswith("In time you will know what it's like to lose.") or
-	message.content.startswith("Fun isn't something one considers from balancing the universe.") or
-	message.content == "In" or message.content == "Fun"):
-		if gOffCooldown == True:
-			await post_txt("avengers", message.author)
-			# await post_txt("avengers", message.author)
-		else:
-			await bot.send_message(message.channel, "Anti-Avengers Initiative is on cooldown. I'm probably still posting it to someone right now. Enjoy your freedom while you can!")
+		elif (message.content.startswith("In time you will know what it's like to lose.") or
+		message.content.startswith("Fun isn't something one considers from balancing the universe.") or
+		message.content == "In" or message.content == "Fun"):
+			if gOffCooldown == True:
+				await post_txt("avengers", message.author)
+				# await post_txt("avengers", message.author)
+			else:
+				await bot.send_message(message.channel, "Anti-Avengers Initiative is on cooldown. I'm probably still posting it to someone right now. Enjoy your freedom while you can!")
 
-bot.run(token)
+while(True):
+	try:
+		bot.run(token)
+	except KeyboardInterrupt as e:
+		print("KEYBOARD INTERRUPT, EXITING")
+		sys.exit()
+	except Exception as e:
+		message = str(e)
+		print(message)
+		print("ATTEMPTING TO RESTART IN 30 SECONDS")
+		time.sleep(30)
