@@ -8,7 +8,7 @@ a discord bot that uses mongodb to make !commands for text/emoji binds
 
 1. [Create a new Discord App](https://discordapp.com/developers/applications/me)
 
-2. Install dependencies such as mongodb, and python packages such as [discord.py](https://github.com/Rapptz/discord.py) and [pymongo](https://api.mongodb.com/python/current/installation.html)
+2. Install python packages such as [discord.py](https://github.com/Rapptz/discord.py) and [pymongo](https://api.mongodb.com/python/current/installation.html)
 
 3. Rename `config_example.ini` to `config.ini`, and edit the config; you must replace the bot token and mongodb uri, and the rest can be optionally changed as you see fit
 
