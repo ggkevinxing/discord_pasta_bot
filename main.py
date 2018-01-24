@@ -163,7 +163,7 @@ async def on_message(message):
 
 	# TODO: check if starts with ! then switch statement on the word that follows the ! instead of all these ifs and repeated startswith stuff?
 
-	if message.server is None:
+	if message.author != bot.user and message.server is None:
 		await bot.send_message(message.channel, "ERROR: I don't currently have support for any commands in private messages. Sorry!")
 
 	elif message.author != bot.user:
