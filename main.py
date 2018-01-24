@@ -27,6 +27,7 @@ gOffCooldown = True
 # discord and database init
 bot = discord.Client()
 if db_uri != False:
+	print(db_uri)
 	db_client = MongoClient(db_uri)
 	db = db_client['Morton']
 else:
@@ -88,9 +89,9 @@ async def add_cmd(message):
 				
 				# check if add or replace
 				if result.upserted_id is not None:
-					await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been replaced")
-				else:
 					await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been added")
+				else:
+					await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been replaced")
 		else:
 			await bot.send_message(message.channel, "ERROR: User " + message.author.display_name + " has provided invalid command '" + command + "' to add.\n----------\n" +
 				"Please ensure that no special symbols are used.\n" +
@@ -199,6 +200,7 @@ async def on_message(message):
 		# trigger commands, aka easter eggs
 
 		elif (message.content.startswith("In time you will know what it's like to lose.") or
+		message.content.startswith("Destiny still arrives.") or
 		message.content.startswith("Fun isn't something one considers from balancing the universe.") or
 		message.content == "In" or message.content == "Fun"):
 			if gOffCooldown == True:
