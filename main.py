@@ -166,8 +166,8 @@ async def on_message(message):
 	if message.author != bot.user and message.server is None:
 		await bot.send_message(message.channel, "ERROR: I don't currently have support for any commands in private messages. Sorry!")
 
-	elif message.author != bot.user:
-		print(message.author.name + ": " + message.content)
+	elif message.author.bot == False:
+		print(message.server.name + " | " + message.channel.name + " | " + message.author.name + ": " + message.content)
 
 		# explicit commands ("!" prefix)
 		# use double quotes to avoid escape characters on apostrophes PLEASE
@@ -200,6 +200,7 @@ async def on_message(message):
 		# trigger commands, aka easter eggs
 
 		elif (message.content.startswith("In time you will know what it's like to lose.") or
+		message.content.startswith("In Time") or
 		message.content.startswith("Destiny still arrives.") or
 		message.content.startswith("Fun isn't something one considers from balancing the universe.") or
 		message.content == "In" or message.content == "Fun"):
@@ -209,14 +210,23 @@ async def on_message(message):
 			else:
 				await bot.send_message(message.channel, "Anti-Avengers Initiative is on cooldown. I'm probably still posting it to someone right now. Enjoy your freedom while you can!")
 
+def bot_run(client, *args, **kwargs):
+	# http://discordpy.readthedocs.io/en/latest/api.html#discord.Client.run
+	# like Client.run except it restarts instead of closes the event loop on exception
+	loop = asyncio.get_event_loop()
+	while(True):
+		try:
+			loop.run_until_complete(client.start(*args, **kwargs))
+		except Exception as e:
+			print("Error", e)  # or use proper logging
+			print("Waiting until restart")
+			time.sleep(120)
+
 while(True):
 	try:
-		bot.run(token)
+		bot_run(bot, token)
 	except KeyboardInterrupt as e:
 		print("KEYBOARD INTERRUPT, EXITING")
 		sys.exit()
 	except Exception as e:
-		message = str(e)
-		print(message)
-		print("ATTEMPTING TO RESTART IN 30 SECONDS")
-		time.sleep(30)
+		continue
