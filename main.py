@@ -172,16 +172,12 @@ async def on_message(message):
 		# explicit commands ("!" prefix)
 		# use double quotes to avoid escape characters on apostrophes PLEASE
 		if message.content.startswith("!add ") or message.content.startswith("!remove "):
-			hasPermission = False
-			for role in message.author.roles:
-				if role.permissions.administrator == True:
-					hasPermission = True
-					if message.content.startswith("!add"):
-						await add_cmd(message)
-					else:	# perhaps this will become an elif if another admin permission needing command is made
-						await remove_cmd(message)
-					break
-			if hasPermission == False:
+			if message.channel.permissions_for(message.author).administrator == True:
+				if message.content.startswith("!add"):
+					await add_cmd(message)
+				else:	# perhaps this will become an elif if another admin permission needing command is made
+					await remove_cmd(message)
+			else:
 				await bot.send_message(message.channel, "ERROR: User " + message.author.display_name + " has insufficient permissions to use command.")
 
 		elif message.content.startswith("!help") or message.content.startswith("!commands"):
