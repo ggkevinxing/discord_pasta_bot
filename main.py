@@ -3,7 +3,6 @@ import os
 import sys
 import discord
 import asyncio
-import configparser
 import logging
 
 from pymongo import MongoClient
@@ -15,18 +14,16 @@ from pymongo import MongoClient
 # Format output to look better on command line
 
 # getting env variables
-config = configparser.ConfigParser()
-config.read("config.ini")
-token = config.get("Essential", "token")
-db_uri = config.get("Essential", "db_uri", fallback=False)
-nickname = config.get("Fun", "nickname", fallback=False)
-game = config.get("Fun", "game", fallback=False)
+token = os.environ.get("BOT_TOKEN")
+db_uri = os.environ.get("DATABASE_URI")
+nickname = os.environ.get("BOT_NICKNAME")
+game = os.environ.get("BOT_GAME")
 
 gOffCooldown = True
 
 # discord and database init
 bot = discord.Client()
-if db_uri != False:
+if db_uri:
 	print(db_uri)
 	db_client = MongoClient(db_uri)
 	db = db_client['Morton']
@@ -75,7 +72,7 @@ async def add_cmd(message):
 		if command.startswith("!"):
 			command = command[1:]
 		# checking if command is valid, i.e. contains characters after "!" and does not use special characters, isn't a default command
-		if (command == "add" or command == "getfreq" or command == "help" or command == "commands"):
+		if (command == "add" or command == "help" or command == "commands"):
 			await bot.send_message(message.channel, "ERROR: Cannot override hardcoded commands.")
 		elif command.strip() and command.isalnum():
 			pasta = message.content[len(prefix):].strip()
@@ -201,7 +198,7 @@ async def on_message(message):
 		message.content.startswith("Fun isn't something one considers from balancing the universe.") or
 		message.content == "In" or message.content == "Fun"):
 			if gOffCooldown == True:
-				await post_txt("avengers", message.author)
+				await post_txt("avengers-iw", message.author)
 				# await post_txt("avengers", message.author)
 			else:
 				await bot.send_message(message.channel, "Anti-Avengers Initiative is on cooldown. I'm probably still posting it to someone right now. Enjoy your freedom while you can!")
