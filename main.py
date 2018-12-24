@@ -140,8 +140,8 @@ async def post_txt(textfilename, channel):
 	message = ""
 	with open(file) as f:
 		for line in f:
-			# don't want to accidentally cross discord's limit of 2000, post message
-			if len(message) > 1900:
+			# don't want to accidentally cross discord's limit of 2000, post message if line with message exceeds 2000 chars
+			if len(message + line) > 2000:
 				await bot.send_message(channel, message)
 				message = ""
 			if line.strip():
