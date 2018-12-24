@@ -199,7 +199,6 @@ async def on_message(message):
 		message.content == "In" or message.content == "Fun"):
 			if gOffCooldown == True:
 				await post_txt("avengers-iw", message.author)
-				# await post_txt("avengers", message.author)
 			else:
 				await bot.send_message(message.channel, "Anti-Avengers Initiative is on cooldown. I'm probably still posting it to someone right now. Enjoy your freedom while you can!")
 
