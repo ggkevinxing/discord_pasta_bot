@@ -91,7 +91,7 @@ async def add_cmd(message):
 					await bot.send_message(message.channel, "SUCCESS: Command '!" + command + "' has been replaced")
 		else:
 			await bot.send_message(message.channel, "ERROR: User " + message.author.display_name + " has provided invalid command '" + command + "' to add.\n----------\n" +
-				"Please ensure that no special symbols are used.\n" +
+				"Please ensure that no special symbols are used in the command you want to add.\n" +
 				"Example: !add infinity In time you will know what it's like to lose. To feel so desperately that you're right, yet to fail all the same. Dread it. Run from it. Destiny still arrives.")
 
 async def remove_cmd(message):
@@ -138,7 +138,7 @@ async def post_txt(textfilename, channel):
 	print("post_txt(" + textfilename + ")")
 	file = textfilename + ".txt"
 	message = ""
-	with open(file) as f:
+	with open(file, "rb") as f:
 		for line in f:
 			# don't want to accidentally cross discord's limit of 2000, post message if line with message exceeds 2000 chars
 			if len(message + line) > 2000:
