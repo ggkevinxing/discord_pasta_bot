@@ -10,7 +10,7 @@ a discord bot that uses mongodb to make !commands for text/emoji binds
 
 2. Install python packages such as [discord.py](https://github.com/Rapptz/discord.py) and [pymongo](https://api.mongodb.com/python/current/installation.html). Also `pip install dnspython` if you plan on using cloud DB solutions such as MongoDB Atlas.
 
-3. Set your environment variables for `BOT_TOKEN` and `DATABASE_URI` at the very least; you must replace the bot token and mongodb uri, and the rest can be optionally changed as you see fit. You can see what is used as environment variables in `main.py`
+3. Set your environment variables for `BOT_TOKEN` (found in the Discord Developers Dashboard under <Application> > Bots section) and `DATABASE_URI` at the very least; you must replace the bot token and mongodb uri, and the rest can be optionally changed as you see fit. You can see what is used as environment variables in `main.py`
 
 4. Add your bot to the desired Discord server(s) using `https://discordapp.com/oauth2/authorize?client_id=<CLIENT_ID>&scope=bot`, where <CLIENT_ID> is found from the Discord Developers dashboard
 
