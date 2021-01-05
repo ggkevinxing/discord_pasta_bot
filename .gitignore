@@ -3,3 +3,4 @@
 *.old
 discord.log
 config.ini
+.env

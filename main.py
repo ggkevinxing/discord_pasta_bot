@@ -6,6 +6,9 @@ import asyncio
 import logging
 
 from pymongo import MongoClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # TO-DO
 # Implement !changegame, !changenick
@@ -19,7 +22,10 @@ db_uri = os.environ.get("DATABASE_URI")
 nickname = os.environ.get("BOT_NICKNAME")
 game = os.environ.get("BOT_GAME")
 
+MAX_MESSAGE_LEN = 2000
+
 gOffCooldown = True
+
 
 # discord and database init
 bot = discord.Client()
@@ -113,15 +119,15 @@ async def get_cmds(message):
 	header = message.guild.name + " commands:"
 	initMsg = await message.channel.send(header)
 	collection = db[str(message.guild.id)] # theoretically, we weren't passed a private message so we should have message.guild.id
-	commands = collection.find().batch_size(10).sort('_id',-1)
+	commands = collection.find().batch_size(10).sort('_id',1)
 	temp = ""
 
 	# redundant code as seen on post_txt, welp
 	for command in commands:
-		if len(temp) > 1900:
+		line = "!" + command['_id'] + "\n"
+		if len(temp + line) > MAX_MESSAGE_LEN:
 			await message.channel.send(temp)
 			temp = ""
-		line = "!" + command['_id'] + "\n"
 		temp += line
 	if temp:
 		await message.channel.send(temp)
@@ -142,7 +148,7 @@ async def post_txt(textfilename, channel):
 		for l in f:
 			line = l.decode(errors='ignore')
 			# don't want to accidentally cross discord's limit of 2000, post message if line with message exceeds 2000 chars
-			if len(message + line) > 2000:
+			if len(message + line) > MAX_MESSAGE_LEN:
 				await channel.send(message)
 				message = ""
 			if line.strip():
