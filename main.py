@@ -9,6 +9,8 @@ import logging
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
+from keepalive import KeepAliveServer
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -284,7 +286,11 @@ async def on_message(message):
     await bot.process_commands(message)
 
 def run_bot():
-    """Run the bot with auto-restart on errors"""
+    """Run the bot with keepalive server and auto-restart"""
+    # Initialize keepalive server
+    keepalive = KeepAliveServer()
+    keepalive.start()
+
     while True:
         try:
             bot.run(TOKEN)

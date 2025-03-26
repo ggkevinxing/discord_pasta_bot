@@ -4,3 +4,4 @@
 discord.log
 config.ini
 .env
+*.pyc
