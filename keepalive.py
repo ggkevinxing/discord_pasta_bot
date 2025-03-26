@@ -4,7 +4,7 @@ from flask import Flask
 from werkzeug.serving import make_server
 
 class KeepAliveServer:
-    def __init__(self, host='0.0.0.0', port=8080):
+    def __init__(self, host='0.0.0.0', port=10000):
         """
         Initialize a Flask-based keepalive server.
         
