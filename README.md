@@ -33,6 +33,10 @@ a discord bot that uses mongodb to make !commands for text/emoji binds
 
   - finds all possible custom commands for the given server and posts them in the channel where the command was used
 
+- `!quote` or `!q` or `!rt`
+
+  - Creates a message quote embed similar to quoting with no added message on Skype. For folks that like to quote reply without saying anything more.
+
 - there's also an easter egg command that you probably never want to use or experience the consequences of
 
 - features a keep alive mechanism that lets you host on free tiers of platforms like Render without worrying about instances spinning down due to inactivity
