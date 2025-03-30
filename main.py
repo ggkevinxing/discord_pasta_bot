@@ -10,6 +10,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 
 from keepalive import KeepAliveServer
+from quote_timestamp_util import format_date_for_quotes
 
 # Configure logging
 logging.basicConfig(
@@ -26,6 +27,7 @@ TOKEN = os.environ.get("BOT_TOKEN")
 DB_URI = os.environ.get("DATABASE_URI")
 NICKNAME = os.environ.get("BOT_NICKNAME")
 GAME = os.environ.get("BOT_GAME")
+CMD_PREFIX = os.environ.get("CMD_PREFIX", default="!")
 
 MAX_MESSAGE_LEN = 2000
 
@@ -35,7 +37,7 @@ intents.message_content = True  # Needed to read message content
 intents.members = True  # Needed for nickname changes
 
 # Initialize bot with command prefix
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
+bot = commands.Bot(command_prefix=CMD_PREFIX, intents=intents, help_command=None)
 
 # Database connection
 if DB_URI:
@@ -107,9 +109,11 @@ async def add_cmd(ctx, command: str = None, *, pasta: str = None):
     # Remove ! if it's included in the command
     if command.startswith("!"):
         command = command[1:]
-        
+    
+    built_in_commands = bot.commands
+    built_in_commands_and_aliases = [cmd.name for cmd in built_in_commands] + [alias for cmd in built_in_commands for alias in cmd.aliases]
     # Check if command is valid
-    if command in ("add", "help", "commands", "remove", "changegame", "changenick"):
+    if command in built_in_commands_and_aliases:
         await ctx.send("ERROR: Cannot override hardcoded commands.")
         return
         
@@ -182,6 +186,45 @@ async def change_nickname(ctx, *, nickname: str = None):
         await ctx.send("ERROR: I don't have permission to change my nickname")
     except Exception as e:
         await ctx.send(f"ERROR: Could not change nickname: {e}")
+
+@bot.command(name="quote", aliases=["q", "rt"])
+@commands.has_permissions(administrator=True)
+async def quote_msg(ctx):
+    """Quote a message with optional additional content"""
+    # Check if this is a reply to another message
+    if not ctx.message.reference:
+        await ctx.send("ERROR: You need to reply to a message to quote it")
+        return
+        
+    # Get the message being replied to
+    try:
+        reference_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+    except discord.NotFound:
+        await ctx.send("ERROR: Could not find the message you're replying to")
+        return
+    
+    # Get original message details
+    original_content = reference_message.content
+    original_author = reference_message.author.display_name
+    timestamp = format_date_for_quotes(reference_message.created_at)
+    
+    # Create an embed that resembles a forwarded message
+    embed = discord.Embed(description=original_content, url=reference_message.jump_url, title="←")
+    embed.set_footer(text=f"{original_author} • {timestamp}")
+
+    
+    # Append quoter
+    quoter = ctx.message.author.display_name
+    content = f"{quoter} quoted:"
+    
+    # Send the manually created "forwarded" message
+    await ctx.send(content=content, embed=embed)
+    
+    # Delete the original command message
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        await ctx.send("ERROR: I don't have permission to delete messages")
 
 @bot.command(name="commands", aliases=["help"])
 async def get_cmds(ctx):
