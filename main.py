@@ -191,7 +191,6 @@ async def change_nickname(ctx, *, nickname: str = None):
         await ctx.send(f"ERROR: Could not change nickname: {e}")
 
 @bot.command(name="quote", aliases=["q", "rt"])
-@commands.has_permissions(administrator=True)
 async def quote_msg(ctx):
     """Quote a message with optional additional content"""
     # Check if this is a reply to another message
