@@ -1,10 +1,13 @@
+""" Main module for Discord Pasta Bot """
+
 import time
+import asyncio
+import logging
 import os
 import sys
 import discord
 from discord.ext import commands
-import asyncio
-import logging
+
 
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -56,19 +59,19 @@ cooldowns = {}
 async def on_ready():
     """Called when the bot is ready and connected to Discord"""
     logger.info(f"Logged in as: {bot.user} (ID: {bot.user.id})")
-    
+
     # Set initial activity
     if GAME:
         logger.info(f"Setting activity to: {GAME}")
         await bot.change_presence(activity=discord.Game(name=GAME))
-        
+
     logger.info("Bot is ready!")
 
 @bot.event
 async def on_guild_join(guild):
     """Called when the bot joins a new guild (server)"""
     logger.info(f"Joined new guild: {guild.name} (ID: {guild.id})")
-    
+
     # Set nickname if specified
     if NICKNAME:
         try:
@@ -84,14 +87,14 @@ async def on_guild_join(guild):
 async def on_command_error(ctx, error):
     """Global error handler for command errors"""
     if isinstance(error, commands.CommandNotFound):
-        command = ctx.message.content[1:]  # Remove the prefix
+        command = ctx.message.content[len(CMD_PREFIX):]  # Remove the prefix
         collection = db[str(ctx.guild.id)]
         pasta_document = collection.find_one({'_id': command})
-        
+
         if pasta_document is not None:
             await ctx.send(pasta_document['content'])
         else:
-            await ctx.send("ERROR: Message starts with '!' but I don't recognize this command. Use !help or !commands to see what's available.")
+            await ctx.send(f"ERROR: Message starts with '{CMD_PREFIX}' but I don't recognize this command. Use {CMD_PREFIX}help or {CMD_PREFIX}commands to see what's available.")
     elif isinstance(error, commands.MissingPermissions):
         await ctx.send(f"ERROR: User {ctx.author.display_name} has insufficient permissions to use command.")
     else:
@@ -105,35 +108,35 @@ async def add_cmd(ctx, command: str = None, *, pasta: str = None):
     if not command or not pasta:
         await ctx.send("ERROR: Invalid format. Use !add <command> <response text>")
         return
-        
-    # Remove ! if it's included in the command
-    if command.startswith("!"):
-        command = command[1:]
-    
+
+    # Remove prefix if it's included in the command
+    if command.startswith(CMD_PREFIX):
+        command = command[len(CMD_PREFIX):]
+
     built_in_commands = bot.commands
     built_in_commands_and_aliases = [cmd.name for cmd in built_in_commands] + [alias for cmd in built_in_commands for alias in cmd.aliases]
     # Check if command is valid
     if command in built_in_commands_and_aliases:
         await ctx.send("ERROR: Cannot override hardcoded commands.")
         return
-        
+
     if not command.strip() or not command.isalnum():
         await ctx.send("ERROR: Command must be alphanumeric with no spaces.")
         return
-    
+
     if len("!remove " + command) >= MAX_MESSAGE_LEN:
         await ctx.send("ERROR: Command is too long.")
-        
+
     # Check that pasta doesn't start with !
     if pasta.startswith("!"):
         await ctx.send("ERROR: Command response cannot start with !")
         return
-        
+
     # Add command to database
     collection = db[str(ctx.guild.id)]
     write_document = {'_id': command, 'content': pasta}
     result = collection.update_one({'_id': command}, {'$set': write_document}, upsert=True)
-    
+
     # Check if command was added or replaced
     if result.upserted_id is not None:
         await ctx.send(f"SUCCESS: Command '!{command}' has been added")
@@ -147,15 +150,15 @@ async def remove_cmd(ctx, command: str = None):
     if not command:
         await ctx.send("ERROR: !remove failed - Invalid input format. Use !remove <command>")
         return
-        
+
     # Remove ! if it's included in the command
-    if command.startswith("!"):
-        command = command[1:]
-        
+    if command.startswith(CMD_PREFIX):
+        command = command[len(CMD_PREFIX):]
+
     # Remove command from database
     collection = db[str(ctx.guild.id)]
     result = collection.delete_one({'_id': command})
-    
+
     if result.deleted_count == 0:
         await ctx.send(f"ERROR: Could not remove, Command '!{command}' not found. On the bright side, you wanted to remove it anyways, right?")
     else:
@@ -168,7 +171,7 @@ async def change_game(ctx, *, game: str = None):
     if not game:
         await ctx.send("ERROR: Please provide a game name")
         return
-        
+
     await bot.change_presence(activity=discord.Game(name=game))
     await ctx.send(f"SUCCESS: Changed playing status to '{game}'")
 
@@ -195,31 +198,31 @@ async def quote_msg(ctx):
     if not ctx.message.reference:
         await ctx.send("ERROR: You need to reply to a message to quote it")
         return
-        
+
     # Get the message being replied to
     try:
         reference_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
     except discord.NotFound:
         await ctx.send("ERROR: Could not find the message you're replying to")
         return
-    
+
     # Get original message details
     original_content = reference_message.content
     original_author = reference_message.author.display_name
     timestamp = format_date_for_quotes(reference_message.created_at)
-    
+
     # Create an embed that resembles a forwarded message
     embed = discord.Embed(description=original_content, url=reference_message.jump_url, title="←")
     embed.set_footer(text=f"{original_author} • {timestamp}")
 
-    
+
     # Append quoter
     quoter = ctx.message.author.display_name
     content = f"{quoter} quoted:"
-    
+
     # Send the manually created "forwarded" message
     await ctx.send(content=content, embed=embed)
-    
+
     # Delete the original command message
     try:
         await ctx.message.delete()
@@ -231,7 +234,7 @@ async def get_cmds(ctx):
     """List all available commands"""
     header = f"{ctx.guild.name} commands:"
     await ctx.send(header)
-    
+
     # Get built-in commands
     built_in_commands = "Built-in commands:\n"
     built_in_commands += "!add <command> <response> - Add a new command\n"
@@ -244,7 +247,7 @@ async def get_cmds(ctx):
     # Get custom commands from database
     collection = db[str(ctx.guild.id)]
     cmds = collection.find().batch_size(10).sort('_id', 1)
-   
+
     has_any_custom_commands = False
     custom_commands = "Custom commands:\n"
     temp = ""
@@ -258,7 +261,7 @@ async def get_cmds(ctx):
             await ctx.send(temp)
             temp = ""
         temp += line
-        
+
     if temp:
         await ctx.send(temp)
 
@@ -266,13 +269,13 @@ async def get_cmds(ctx):
 async def post_txt(textfilename, user):
     """Post the contents of a text file to the channel"""
     global cooldowns
-    
+
     # Set cooldown
     cooldowns[textfilename] = True
-    
+
     file = f"{textfilename}.txt"
     message = ""
-    
+
     try:
         with open(file, "rb") as f:
             for l in f:
@@ -283,15 +286,15 @@ async def post_txt(textfilename, user):
                     message = ""
                 if line.strip():
                     message += line
-        
+
         if message:
             await user.send(message)
-            
+
     except FileNotFoundError:
         logger.error(f"Text file not found: {file}")
     except Exception as e:
         logger.error(f"Error posting text file: {e}")
-    
+
     # Reset cooldown after 5 minutes
     await asyncio.sleep(300)
     cooldowns[textfilename] = False
@@ -305,10 +308,10 @@ async def on_message(message):
         if message.author != bot.user and message.guild is None:
             await message.channel.send("ERROR: I don't currently have support for any commands in private messages. Sorry!")
         return
-    
+
     # Log messages
     logger.info(f"{message.guild.name} | {message.channel.name} | {message.author.name}: {message.content}")
-    
+
     # Easter eggs
     infinity_triggers = [
         "In time you will know what it's like to lose.",
@@ -318,13 +321,13 @@ async def on_message(message):
         "In",
         "Fun"
     ]
-    
+
     if any(message.content.startswith(trigger) for trigger in infinity_triggers):
         if not cooldowns.get("avengers-iw", False):
             await post_txt("avengers-iw", message.author)
         else:
             await message.channel.send("Anti-Avengers Initiative is on cooldown. I'm probably still posting it to someone right now. Enjoy your freedom while you can!")
-    
+
     # Process commands
     await bot.process_commands(message)
 
