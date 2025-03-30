@@ -109,9 +109,11 @@ async def add_cmd(ctx, command: str = None, *, pasta: str = None):
     # Remove ! if it's included in the command
     if command.startswith("!"):
         command = command[1:]
-        
+    
+    built_in_commands = bot.commands
+    built_in_commands_and_aliases = [cmd.name for cmd in built_in_commands] + [alias for cmd in built_in_commands for alias in cmd.aliases]
     # Check if command is valid
-    if command in ("add", "help", "commands", "remove", "changegame", "changenick"):
+    if command in built_in_commands_and_aliases:
         await ctx.send("ERROR: Cannot override hardcoded commands.")
         return
         
