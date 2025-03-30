@@ -35,6 +35,8 @@ a discord bot that uses mongodb to make !commands for text/emoji binds
 
 - there's also an easter egg command that you probably never want to use or experience the consequences of
 
+- features a keep alive mechanism that lets you host on free tiers of platforms like Render without worrying about instances spinning down due to inactivity
+
 # To-Do
 
 - Modularize and clean up

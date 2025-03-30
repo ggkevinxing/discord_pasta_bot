@@ -9,6 +9,8 @@ import logging
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
+from keepalive import KeepAliveServer
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -46,13 +48,6 @@ else:
 
 # Command cooldowns
 cooldowns = {}
-
-class CustomHelpCommand(commands.HelpCommand):
-    """Custom help command that lists all custom commands from the database"""
-    
-    async def send_bot_help(self, mapping):
-        ctx = self.context
-        await get_cmds(ctx)
 
 # Setup events
 @bot.event
@@ -121,6 +116,9 @@ async def add_cmd(ctx, command: str = None, *, pasta: str = None):
     if not command.strip() or not command.isalnum():
         await ctx.send("ERROR: Command must be alphanumeric with no spaces.")
         return
+    
+    if len("!remove " + command) >= MAX_MESSAGE_LEN:
+        await ctx.send("ERROR: Command is too long.")
         
     # Check that pasta doesn't start with !
     if pasta.startswith("!"):
@@ -138,7 +136,7 @@ async def add_cmd(ctx, command: str = None, *, pasta: str = None):
     else:
         await ctx.send(f"SUCCESS: Command '!{command}' has been replaced")
 
-@bot.command(name="remove")
+@bot.command(name="remove", aliases=['rm'])
 @commands.has_permissions(administrator=True)
 async def remove_cmd(ctx, command: str = None):
     """Remove a custom command from the bot"""
@@ -177,7 +175,6 @@ async def change_nickname(ctx, *, nickname: str = None):
     if not nickname:
         await ctx.send("ERROR: Please provide a nickname")
         return
-        
     try:
         await ctx.guild.me.edit(nick=nickname)
         await ctx.send(f"SUCCESS: Changed nickname to '{nickname}'")
@@ -190,7 +187,7 @@ async def change_nickname(ctx, *, nickname: str = None):
 async def get_cmds(ctx):
     """List all available commands"""
     header = f"{ctx.guild.name} commands:"
-    init_msg = await ctx.send(header)
+    await ctx.send(header)
     
     # Get built-in commands
     built_in_commands = "Built-in commands:\n"
@@ -199,18 +196,22 @@ async def get_cmds(ctx):
     built_in_commands += "!changegame <game> - Change bot's playing status\n"
     built_in_commands += "!changenick <nickname> - Change bot's nickname\n"
     built_in_commands += "!commands or !help - Show this help message\n\n"
-    built_in_commands += "Custom commands:"
-    
     await ctx.send(built_in_commands)
-    
+
     # Get custom commands from database
     collection = db[str(ctx.guild.id)]
-    commands = collection.find().batch_size(10).sort('_id', 1)
+    cmds = collection.find().batch_size(10).sort('_id', 1)
+   
+    has_any_custom_commands = False
+    custom_commands = "Custom commands:\n"
     temp = ""
 
-    for command in commands:
+    for command in cmds:
         line = f"!{command['_id']}\n"
-        if len(temp + line) > MAX_MESSAGE_LEN:
+        if has_any_custom_commands is False:
+            has_any_custom_commands = True
+            await ctx.send(custom_commands)
+        if len(custom_commands + temp + line) > MAX_MESSAGE_LEN:
             await ctx.send(temp)
             temp = ""
         temp += line
@@ -285,7 +286,11 @@ async def on_message(message):
     await bot.process_commands(message)
 
 def run_bot():
-    """Run the bot with auto-restart on errors"""
+    """Run the bot with keepalive server and auto-restart"""
+    # Initialize keepalive server
+    keepalive = KeepAliveServer()
+    keepalive.start()
+
     while True:
         try:
             bot.run(TOKEN)
