@@ -106,7 +106,7 @@ async def on_command_error(ctx, error):
 async def add_cmd(ctx, command: str = None, *, pasta: str = None):
     """Add a custom command to the bot"""
     if not command or not pasta:
-        await ctx.send("ERROR: Invalid format. Use !add <command> <response text>")
+        await ctx.send(f"ERROR: Invalid format. Use {CMD_PREFIX}add <command> <response text>")
         return
 
     # Remove prefix if it's included in the command
@@ -124,12 +124,12 @@ async def add_cmd(ctx, command: str = None, *, pasta: str = None):
         await ctx.send("ERROR: Command must be alphanumeric with no spaces.")
         return
 
-    if len("!remove " + command) >= MAX_MESSAGE_LEN:
+    if len(CMD_PREFIX + "remove " + command) >= MAX_MESSAGE_LEN:
         await ctx.send("ERROR: Command is too long.")
 
-    # Check that pasta doesn't start with !
-    if pasta.startswith("!"):
-        await ctx.send("ERROR: Command response cannot start with !")
+    # Check that pasta doesn't start with CMD_PREFIX
+    if pasta.startswith(CMD_PREFIX):
+        await ctx.send(f"ERROR: Command response cannot start with {CMD_PREFIX}")
         return
 
     # Add command to database
@@ -139,19 +139,19 @@ async def add_cmd(ctx, command: str = None, *, pasta: str = None):
 
     # Check if command was added or replaced
     if result.upserted_id is not None:
-        await ctx.send(f"SUCCESS: Command '!{command}' has been added")
+        await ctx.send(f"SUCCESS: Command '{CMD_PREFIX}{command}' has been added")
     else:
-        await ctx.send(f"SUCCESS: Command '!{command}' has been replaced")
+        await ctx.send(f"SUCCESS: Command '{CMD_PREFIX}{command}' has been replaced")
 
 @bot.command(name="remove", aliases=['rm'])
 @commands.has_permissions(administrator=True)
 async def remove_cmd(ctx, command: str = None):
     """Remove a custom command from the bot"""
     if not command:
-        await ctx.send("ERROR: !remove failed - Invalid input format. Use !remove <command>")
+        await ctx.send(f"ERROR: {CMD_PREFIX}remove failed - Invalid input format. Use {CMD_PREFIX}remove <command>")
         return
 
-    # Remove ! if it's included in the command
+    # Remove CMD_PREFIX if it's included in the command
     if command.startswith(CMD_PREFIX):
         command = command[len(CMD_PREFIX):]
 
@@ -160,9 +160,9 @@ async def remove_cmd(ctx, command: str = None):
     result = collection.delete_one({'_id': command})
 
     if result.deleted_count == 0:
-        await ctx.send(f"ERROR: Could not remove, Command '!{command}' not found. On the bright side, you wanted to remove it anyways, right?")
+        await ctx.send(f"ERROR: Could not remove, Command '{CMD_PREFIX}{command}' not found. On the bright side, you wanted to remove it anyways, right?")
     else:
-        await ctx.send(f"SUCCESS: Command '!{command}' has been removed")
+        await ctx.send(f"SUCCESS: Command '{CMD_PREFIX}{command}' has been removed")
 
 @bot.command(name="changegame")
 @commands.has_permissions(administrator=True)
@@ -236,11 +236,11 @@ async def get_cmds(ctx):
 
     # Get built-in commands
     built_in_commands = "Built-in commands:\n"
-    built_in_commands += "!add <command> <response> - Add a new command\n"
-    built_in_commands += "!remove <command> - Remove a command\n"
-    built_in_commands += "!changegame <game> - Change bot's playing status\n"
-    built_in_commands += "!changenick <nickname> - Change bot's nickname\n"
-    built_in_commands += "!commands or !help - Show this help message\n\n"
+    built_in_commands += f"{CMD_PREFIX}add <command> <response> - Add a new command\n"
+    built_in_commands += f"{CMD_PREFIX}remove <command> - Remove a command\n"
+    built_in_commands += f"{CMD_PREFIX}changegame <game> - Change bot's playing status\n"
+    built_in_commands += f"{CMD_PREFIX}changenick <nickname> - Change bot's nickname\n"
+    built_in_commands += f"{CMD_PREFIX}commands or {CMD_PREFIX}help - Show this help message\n\n"
     await ctx.send(built_in_commands)
 
     # Get custom commands from database
@@ -252,7 +252,7 @@ async def get_cmds(ctx):
     temp = ""
 
     for command in cmds:
-        line = f"!{command['_id']}\n"
+        line = f"{CMD_PREFIX}{command['_id']}\n"
         if has_any_custom_commands is False:
             has_any_custom_commands = True
             await ctx.send(custom_commands)
