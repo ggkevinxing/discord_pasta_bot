@@ -31,6 +31,7 @@ DB_URI = os.environ.get("DATABASE_URI")
 NICKNAME = os.environ.get("BOT_NICKNAME")
 GAME = os.environ.get("BOT_GAME")
 CMD_PREFIX = os.environ.get("CMD_PREFIX", default="!")
+LOCAL_TZ = os.environ.get("LOCAL_TZ", default="America/New_York")
 
 MAX_MESSAGE_LEN = 2000
 
@@ -208,19 +209,20 @@ async def quote_msg(ctx):
     # Get original message details
     original_content = reference_message.content
     original_author = reference_message.author.display_name
-    timestamp = format_date_for_quotes(reference_message.created_at)
+    timestamp = format_date_for_quotes(reference_message.created_at, LOCAL_TZ)
+    msg_url = reference_message.jump_url
+
+    # Prep quoter
+    quoter = ctx.message.author.display_name
+    formatted_quoter = f"{quoter} quoted:"
 
     # Create an embed that resembles a forwarded message
-    embed = discord.Embed(description=original_content, url=reference_message.jump_url, title="←")
+    embed = discord.Embed(description=original_content, url=msg_url, title="←")
     embed.set_footer(text=f"{original_author} • {timestamp}")
-
-
-    # Append quoter
-    quoter = ctx.message.author.display_name
-    content = f"{quoter} quoted:"
+    embed.set_author(name=formatted_quoter, url=msg_url)
 
     # Send the manually created "forwarded" message
-    await ctx.send(content=content, embed=embed)
+    await ctx.send(embed=embed)
 
     # Delete the original command message
     try:
