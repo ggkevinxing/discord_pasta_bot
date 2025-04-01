@@ -25,7 +25,8 @@ class PastaBot(commands.Bot):
         super().__init__(
             command_prefix=self.config.cmd_prefix, 
             intents=intents, 
-            help_command=None
+            help_command=None,
+            chunk_guilds_at_startup=False
         )
 
         # Connect to database
