@@ -33,7 +33,7 @@ GAME = os.environ.get("BOT_GAME")
 CMD_PREFIX = os.environ.get("CMD_PREFIX", default="!")
 LOCAL_TZ = os.environ.get("LOCAL_TZ", default="America/New_York")
 
-MAX_MESSAGE_LEN = 2000
+MAX_MESSAGE_LEN = os.environ.get("MAX_MESSAGE_LEN", default=2000)
 
 # Setup intents (required in newer Discord API versions)
 intents = discord.Intents.default()

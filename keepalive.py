@@ -1,5 +1,4 @@
 import threading
-import time
 from flask import Flask
 from werkzeug.serving import make_server
 
