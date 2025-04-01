@@ -47,7 +47,7 @@ class PastaBot(commands.Bot):
     async def run_bot(self):
         """Run the bot"""
         logger.info("Starting bot")
-        await self.run(self.config.token)
+        await self.start(self.config.token)
 
     def close(self):
         """Close all connections"""

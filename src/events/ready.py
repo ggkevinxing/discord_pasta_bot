@@ -8,7 +8,7 @@ class ReadyEvents:
     """On-ready and guild join event handlers"""
 
     def __init__(self, bot):
-        self.bot = bot.bot
+        self.bot = bot
         self.config = bot.config
 
         # Register event handlers
