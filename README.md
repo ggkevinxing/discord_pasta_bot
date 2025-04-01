@@ -41,6 +41,12 @@ a discord bot that uses mongodb to make !commands for text/emoji binds
 
 - features a keep alive mechanism that lets you host on free tiers of platforms like Render without worrying about instances spinning down due to inactivity
 
-# To-Do
+# Extending the bot
 
-- Modularize and clean up
+If you want to add your own commands, you can follow the conventions of the modules under the `src/commands` directory.
+
+1. Create a handler class that extends `commands.Cog` and include a `setup` class function.
+
+2. Add the use of the new module's `setup` function in `src/commands/__init__.py`.
+
+Similar process for new events but we won't be extending `commands.Cog` and the `setup` is a synchronous function.
