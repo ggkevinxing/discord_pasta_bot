@@ -4,7 +4,7 @@ a discord bot that uses mongodb to make !commands for text/emoji binds
 
 ![Let's give a quick shout-out to Tobey Maguire](https://raw.githubusercontent.com/ggkevinxing/discord_pasta_bot/master/add_example.JPG)
 
-![Skype-like quoting](https://raw.githubusercontent.com/ggkevinxing/discord_pasta_bot/master/quote_example.JPG)
+![Skype-like quoting](https://raw.githubusercontent.com/ggkevinxing/discord_pasta_bot/refs/heads/master/quote_example.jpg)
 
 # SETTING UP
 
