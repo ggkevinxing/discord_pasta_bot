@@ -5,3 +5,5 @@ dnspython>=2.4.0
 flask>=2.3.0
 werkzeug>=2.3.0
 pytz>=2025.2
+psutil>=5.9.5
+weakref>=1.0.0
