@@ -6,7 +6,6 @@ import sys
 
 import discord
 
-from keepalive import KeepAliveServer
 from src.bot import PastaBot
 from config import Config
 
@@ -21,11 +20,7 @@ config = Config()
 bot = PastaBot(config)
 
 async def run_bot(b):
-    """Run the bot with keepalive server and auto-restart"""
-    # Initialize keepalive server
-    keepalive = KeepAliveServer()
-    keepalive.start()
-    
+    """Run the bot with auto-restart"""
     retry_count = 0
     max_retries = 20
     
