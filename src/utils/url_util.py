@@ -33,9 +33,12 @@ def replace_urls_with_emojis(text: str) -> str:
         url = match.group(0)
         url_lower = url.lower()
         
+        # Remove query parameters before checking extensions
+        url_without_query = url_lower.split('?')[0].split('#')[0]
+        
         # Check for video content first (since .gif could be considered both)
         for video_ext in VIDEO_EXTENSIONS:
-            if url_lower.endswith(video_ext):
+            if url_without_query.endswith(video_ext):
                 return VIDEO_EMOJI
         
         for video_keyword in VIDEO_KEYWORDS:
@@ -44,7 +47,7 @@ def replace_urls_with_emojis(text: str) -> str:
         
         # Check for image content
         for image_ext in IMAGE_EXTENSIONS:
-            if url_lower.endswith(image_ext):
+            if url_without_query.endswith(image_ext):
                 return IMAGE_EMOJI
         
         # If no match, return link emoji
