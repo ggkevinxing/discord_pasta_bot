@@ -13,7 +13,6 @@ from keepalive import KeepAliveServer
 from src.bot import PastaBot
 from config import Config
 from src.utils.session import (
-    patch_discord_session, 
     close_all_sessions, 
     register_session_cleanup
 )
@@ -62,6 +61,12 @@ async def graceful_shutdown(sig=None):
 
 def setup_signal_handlers():
     """Set up signal handlers for graceful shutdown"""
+    # Signal handlers are not supported on Windows with add_signal_handler
+    # So we skip this on Windows
+    if sys.platform == 'win32':
+        logger.debug("Signal handlers not available on Windows, skipping")
+        return
+    
     loop = asyncio.get_event_loop()
     
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -147,9 +152,6 @@ async def run_bot(config_obj):
 
 async def main():
     """Main entry point with proper async setup and teardown"""
-    # Patch discord.py's HTTP session before creating the bot
-    patch_discord_session()
-    
     # Register session cleanup handlers
     register_session_cleanup()
     

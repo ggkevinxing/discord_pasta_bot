@@ -12,6 +12,26 @@ logger = logging.getLogger("bot.utils.session")
 # Keep track of all sessions to ensure they get closed
 _active_sessions = weakref.WeakSet()
 
+def get_configured_connector():
+    """
+    Creates an aiohttp TCPConnector with optimal configuration for Discord API
+    
+    This helps avoid rate limiting by configuring proper TCP connection limits
+    and other settings appropriate for Discord's API.
+    
+    Returns:
+        aiohttp.TCPConnector: A properly configured connector
+    """
+    # Setting connector with proper limits helps avoid rate limits
+    connector = aiohttp.TCPConnector(
+        limit=50,  # Overall connection limit
+        limit_per_host=5,  # Limit per host to avoid hammering Discord API
+        force_close=True,  # Close connections after use
+        enable_cleanup_closed=True  # Clean up closed connections
+    )
+    
+    return connector
+
 def get_configured_client_session():
     """
     Creates an aiohttp ClientSession with optimal configuration for Discord API
@@ -22,13 +42,7 @@ def get_configured_client_session():
     Returns:
         aiohttp.ClientSession: A properly configured session
     """
-    # Setting connector with proper limits helps avoid rate limits
-    connector = aiohttp.TCPConnector(
-        limit=50,  # Overall connection limit
-        limit_per_host=5,  # Limit per host to avoid hammering Discord API
-        force_close=True,  # Close connections after use
-        enable_cleanup_closed=True  # Clean up closed connections
-    )
+    connector = get_configured_connector()
     
     # Configure timeout
     timeout = aiohttp.ClientTimeout(
@@ -49,22 +63,6 @@ def get_configured_client_session():
     
     return session
 
-# Monkey patch discord.py to use our configured session
-def patch_discord_session():
-    """
-    Patch discord.py to use our configured HTTP session.
-    This should be called before the bot is created.
-    """
-    original_create_session = discord.http.HTTPClient._create_session
-    
-    async def patched_create_session(self):
-        if self._session is None or self._session.closed:
-            self._session = get_configured_client_session()
-            self._should_clean_session = True
-        return self._session
-    
-    discord.http.HTTPClient._create_session = patched_create_session
-    logger.info("Patched discord.py HTTP session creation")
 
 async def close_all_sessions():
     """
