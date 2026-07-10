@@ -5,7 +5,7 @@ IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.
 
 # Video extensions and keywords
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.webm', '.avi', '.mkv', '.flv', '.wmv', '.m4v'}
-VIDEO_KEYWORDS = {'youtube.com', 'youtu.be', 'twitch.tv', 'streamable', 'tenor.com', 'giphy.com'}
+VIDEO_KEYWORDS = {'youtube.com', 'youtu.be', 'twitch.tv', 'streamable', 'tenor.com', 'giphy.com', 'klipy.com'}
 
 # Emojis
 IMAGE_EMOJI = '📷'
