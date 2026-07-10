@@ -1,7 +1,6 @@
 """Message event handlers and easter eggs"""
 import logging
 import asyncio
-import discord
 
 logger = logging.getLogger("bot.events.messages")
 

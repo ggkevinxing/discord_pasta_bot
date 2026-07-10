@@ -3,6 +3,7 @@ import logging
 import discord
 from discord.ext import commands
 
+from src.utils.quote_util import generate_quote_content
 from src.utils.timestamp import format_date_for_quotes
 
 logger = logging.getLogger("bot.commands.quotes")
@@ -13,6 +14,15 @@ class QuoteCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = bot.config
+
+    async def create_quote(self, ctx, embed):
+        await ctx.send(embed=embed)
+
+        # Delete the original command message
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            await ctx.send("ERROR: I don't have permission to delete messages")
 
     @commands.command(name="quote", aliases=["q", "rt"])
     async def quote_msg(self, ctx):
@@ -38,20 +48,18 @@ class QuoteCommands(commands.Cog):
         # Prep quoter
         quoter = ctx.message.author.display_name
         formatted_quoter = f"{quoter} quoted:"
+        formatted_footer = f"{original_author} • {timestamp}"
+        quote_content = generate_quote_content(original_content, self.config.max_quote_len)
 
         # Create an embed that resembles a forwarded message
-        embed = discord.Embed(description=original_content, url=msg_url, title="←")
-        embed.set_footer(text=f"{original_author} • {timestamp}")
+        embed = discord.Embed(description=quote_content, url=msg_url, title="←")
+        embed.set_footer(text=formatted_footer)
         embed.set_author(name=formatted_quoter, url=msg_url)
-
-        # Send the manually created "forwarded" message
-        await ctx.send(embed=embed)
-
-        # Delete the original command message
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            await ctx.send("ERROR: I don't have permission to delete messages")
+        logger.debug(f"{quoter} quoted {formatted_footer}: {quote_content}")
+        if (quote_content != original_content):
+            logger.debug(f"original content: {original_content}")
+        
+        await self.create_quote(ctx, embed)
 
 async def setup(bot):
     """Add the quote commands to the bot"""

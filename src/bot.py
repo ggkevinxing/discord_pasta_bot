@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 
 from src.utils.db import Database
+from src.utils.session import get_configured_connector
 from src.events import setup as setup_events
 from src.commands import setup as setup_commands
 
@@ -26,13 +27,14 @@ class PastaBot(commands.Bot):
         # Set proper chunk settings to avoid unnecessary API calls
         chunk_guilds_at_startup = False  # Don't request all guild members at startup
 
-        # Initialize bot with command prefix
+        # Initialize bot with command prefix and configured connector
         super().__init__(
             command_prefix=self.config.cmd_prefix, 
             intents=intents,
             help_command=None,
             chunk_guilds_at_startup=chunk_guilds_at_startup,
-            max_messages=100  # Limit message cache size
+            max_messages=100,  # Limit message cache size
+            connector=get_configured_connector()  # Use our configured connector
         )
 
         # Connect to database

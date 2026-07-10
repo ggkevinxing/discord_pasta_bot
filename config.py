@@ -18,7 +18,10 @@ class Config:
         self.local_tz = os.environ.get("LOCAL_TZ", default="America/New_York")
 
         # Discord limitations
-        self.max_message_len = os.environ.get("MAX_MESSAGE_LEN", default=2000)
+        self.max_message_len: int = int(os.environ.get("MAX_MESSAGE_LEN", default=2000))
+
+        # Flavor
+        self.max_quote_len: int = int(os.environ.get("MAX_QUOTE_LEN", default=280)) # default is the old tweet limit
 
         # Validate critical settings
         if not self.token:
