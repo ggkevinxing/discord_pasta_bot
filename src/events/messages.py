@@ -4,6 +4,10 @@ import logging
 import time
 from pathlib import Path
 
+import discord
+
+from src.utils.log_util import log_http_exception
+
 logger = logging.getLogger("bot.events.messages")
 
 # Where easter-egg text files are read from, resolved from this file's
@@ -127,6 +131,8 @@ class MessageEvents:
                     await send(buffer)
         except FileNotFoundError:
             logger.error(f"Text file not found: {path}")
+        except discord.HTTPException as e:
+            log_http_exception(logger, e, context={"asset": path.name})
         except Exception as e:
             logger.error(f"Error posting text file: {e}")
 

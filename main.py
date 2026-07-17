@@ -1,7 +1,6 @@
 """Main entry point for Discord Pasta Bot"""
 import asyncio
 import logging
-import time
 import sys
 import random
 import signal
@@ -14,8 +13,9 @@ from src.bot import PastaBot
 from config import Config
 from src.utils.session import (
     close_all_sessions, 
-    register_session_cleanup
+    register_session_cleanup,
 )
+from src.utils.log_util import format_http_exception, header_value
 
 # Configure logging
 logging.basicConfig(
@@ -108,13 +108,27 @@ async def run_bot(config_obj):
             sys.exit(1)
             
         except discord.errors.HTTPException as e:
-            if e.status == 429:  # Rate limited
+            if e.status == 429:  # Rate limited (typically a global/CF IP block when raised here)
                 retry_count += 1
                 # Calculate backoff time: exponential with jitter
                 backoff_time = min(300, (2 ** retry_count) + (random.randint(0, 1000) / 1000))
+                # Honor the server-supplied Retry-After if it's longer than our backoff,
+                # so we don't re-enter before the block has genuinely expired.
+                response = getattr(e, "response", None)
+                headers = getattr(response, "headers", None) if response is not None else None
+                retry_after_header = header_value(headers, "retry-after")
+                if retry_after_header is not None:
+                    try:
+                        server_backoff = float(retry_after_header)
+                        backoff_time = max(backoff_time, server_backoff)
+                    except ValueError:
+                        # Some endpoints return an HTTP-date; we just keep our own
+                        # backoff and surface the raw header for diagnosis.
+                        pass
                 logger.warning(
-                    f"Rate limited (attempt {retry_count}/{max_retries}). "
-                    f"Retrying in {backoff_time:.2f} seconds..."
+                    f"Rate limited at run_bot level (attempt {retry_count}/{max_retries}). "
+                    f"Backoff {backoff_time:.2f}s (retry-after header: {retry_after_header}). "
+                    f"Details:\n  {format_http_exception(e, context={'attempt': retry_count})}"
                 )
                 # Clean up before waiting
                 if bot:

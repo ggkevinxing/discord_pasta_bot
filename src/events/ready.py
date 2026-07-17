@@ -2,6 +2,8 @@
 import logging
 import discord
 
+from src.utils.log_util import log_http_exception
+
 logger = logging.getLogger("bot.events.ready")
 
 class ReadyEvents:
@@ -44,6 +46,8 @@ class ReadyEvents:
                 logger.info(f"Changed nickname to {self.config.nickname} in {guild.name}")
             except discord.Forbidden:
                 logger.warning(f"Could not change nickname in {guild.name}: Missing permissions")
+            except discord.HTTPException as e:
+                log_http_exception(logger, e, context={"guild_id": guild.id, "op": "change_nickname"})
             except Exception as e:
                 logger.error(f"Error changing nickname: {e}")
 
@@ -62,6 +66,8 @@ class ReadyEvents:
                     f"to see available commands. Server admins can add custom commands with "
                     f"`{self.config.cmd_prefix}add <command> <response>`."
                 )
+        except discord.HTTPException as e:
+            log_http_exception(logger, e, context={"guild_id": guild.id, "op": "send_welcome"})
         except Exception as e:
             logger.error(f"Error sending welcome message: {e}")
 
